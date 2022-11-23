@@ -7,29 +7,35 @@ declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 pub mod gopulse {
     use super::*;
 
-    pub fn post_v0(ctx: Context<PostContent>, title: String, essay: String, amount: u64) -> Result<()> {
+    pub fn post_v0(ctx: Context<PostContent>, content_link: String, amount: u64, validator_threshold: u64) -> Result<()> {
         let content: &mut Account<Content> = &mut ctx.accounts.content;
         let author: &Signer = &ctx.accounts.author;
         // let accounts = &ctx.remaining_accounts;
         let clock: Clock = Clock::get().unwrap();
         
-        if title.chars().count() < 1 {
-            return Err(ErrorCode::TitleRequired.into())
+        if content_link.chars().count() < 1 {
+            return Err(ErrorCode::ContentRequired.into())
         }
 
-        if title.chars().count() > 50 {
-            return Err(ErrorCode::TitleTooLong.into())
+        if amount > 10000 {
+            return Err(ErrorCode::StakeToLarge.into())
         }
 
-        if essay.chars().count() > 280 {
-            return Err(ErrorCode::ReviewTooLong.into())
+        if validator_threshold % 2 == 0 {
+            return Err(ErrorCode::ThresholdEven.into())
+        }
+
+        if validator_threshold < 51 {
+            return Err(ErrorCode::ThresholdTooSmall.into())
         }
 
         content.author = *author.key;
         content.timestamp = clock.unix_timestamp;
-        content.title = title;
-        content.essay = essay;
+        content.content_link = content_link;
         content.amount = amount;
+        content.validator_threshold = validator_threshold;
+
+        //transfer staked GPT to vault
 
         let cpi_accounts = Transfer {
             from: ctx.accounts.from.to_account_info(),
@@ -40,13 +46,6 @@ pub mod gopulse {
         let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
 
         token::transfer(cpi_ctx, amount)?;
-
-        // let authors: usize = author_keys.len();
-        // let tokenDistribution: usize = 1/authors;
-
-        // for address in author_keys {
-        //     token::transfer (address: Pubkey, tokenDistribution: usize)?;
-        // }
 
         Ok(())
     }
@@ -70,9 +69,9 @@ pub struct PostContent<'info> {
 pub struct Content {
     pub author: Pubkey,
     pub timestamp: i64,
-    pub title: String,
-    pub essay: String,
+    pub content_link: String,
     pub amount: u64,
+    pub validator_threshold: u64,
 }
 
 const DISCRIMINATOR_LENGTH: usize = 8;
@@ -94,10 +93,12 @@ impl Content {
 
 #[error_code]
 pub enum ErrorCode {
-    #[msg("The provided title should be 50 characters long maximum.")]
-    TitleTooLong,
-    #[msg("The provided review should be 280 characters long maximum.")]
-    ReviewTooLong,
-    #[msg("Topic Required.")]
-    TitleRequired,
+    #[msg("Content link Required")]
+    ContentRequired,
+    #[msg("Cannot stake more than 10,000 GPT")]
+    StakeToLarge,
+    #[msg("Validator Threshold must be odd")]
+    ThresholdEven,
+    #[msg("Validator Threshold must be 51 or greater")]
+    ThresholdTooSmall,
 }

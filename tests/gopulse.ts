@@ -11,8 +11,8 @@ describe("gopulse", () => {
 
   const program = anchor.workspace.Gopulse as Program<Gopulse>;
 
-  let mint = null;
-  let keypair = null;
+  let gptMintKeypair = null;
+  let gptMint = null;
   let from = null;
   let to = null;
   let fromKeypair = null;
@@ -20,22 +20,22 @@ describe("gopulse", () => {
 
   it("Initialize test state", async () => {
 
-    keypair = await anchor.web3.Keypair.generate();
-    const signature = await program.provider.connection.requestAirdrop(keypair.publicKey, 1000000000);
+    gptMintKeypair = await anchor.web3.Keypair.generate();
+    const signature = await program.provider.connection.requestAirdrop(gptMintKeypair.publicKey, 1000000000);
     await program.provider.connection.confirmTransaction(signature);
 
-    mint = await Spl.createMint(program.provider.connection, 
-        keypair,           
-        keypair.publicKey,       
+    gptMint = await Spl.createMint(program.provider.connection, 
+        gptMintKeypair,           
+        gptMintKeypair.publicKey,       
         null,                         
         6);
-    console.log("Created  Mint: " + mint.toBase58());
+    console.log("Created GPT Mint: " + gptMint.toBase58());
 
     fromKeypair = await anchor.web3.Keypair.generate();
     const signature2 = await program.provider.connection.requestAirdrop(fromKeypair.publicKey, 1000000000);
     await program.provider.connection.confirmTransaction(signature2);
 
-    const mintPublicKey = new PublicKey(mint);
+    const mintPublicKey = new PublicKey(gptMint);
 
     from = await Spl.createAssociatedTokenAccount(
         program.provider.connection, 
@@ -43,7 +43,7 @@ describe("gopulse", () => {
         mintPublicKey,
         fromKeypair.publicKey
     );
-    console.log("Created From aka: " + from.toBase58());
+    console.log("Created From ATA: " + from.toBase58());
 
     toKeypair = await anchor.web3.Keypair.generate();
     const signature3 = await program.provider.connection.requestAirdrop(toKeypair.publicKey, 1000000000);
@@ -55,7 +55,7 @@ describe("gopulse", () => {
         mintPublicKey,
         toKeypair.publicKey
     );
-    console.log("Created To aka: " + to.toBase58());
+    console.log("Created To ATA: " + to.toBase58());
 
     const shortMintPublicKey = new PublicKey(from);
     let tx1 = await Spl.mintTo(
@@ -63,20 +63,18 @@ describe("gopulse", () => {
         fromKeypair,
         mintPublicKey,
         shortMintPublicKey,
-        keypair,
+        gptMintKeypair,
         10000,
     );
     const usdcMintedToShort = await program.provider.connection.getTokenAccountBalance(from);
-    console.log("Minted " + usdcMintedToShort.value.amount + " USDC to Short");
+    console.log("Minted " + usdcMintedToShort.value.amount + " GPT to From");
 
   });
 
   it('Post new content', async () => {
     let content;
-    // let contentAccounts = await program.account.content.all();
-    // for (let index = 0; index < 10; index++) {
         content = anchor.web3.Keypair.generate();
-        await program.rpc.postV0('dune', 'a good review', new anchor.BN(100), {
+        await program.rpc.postV0('content link', new anchor.BN(100), new anchor.BN(53), {
             accounts: {
                 content: content.publicKey,
                 author: fromKeypair.publicKey,
@@ -88,22 +86,19 @@ describe("gopulse", () => {
             // remainingAccounts: contentAccounts,
             signers: [content, fromKeypair],
         });
-    // }
 
     // Fetch the account details of the created content.
-    // const contentAccount = await program.account.content.fetch(content.publicKey);
+    const contentAccount = await program.account.content.fetch(content.publicKey);
 
-    // // contentAccounts = await program.account.content.all();
+    const fromAccount = await program.provider.connection.getTokenAccountBalance(from);
+    const toAccount = await program.provider.connection.getTokenAccountBalance(to);
 
-    // const fromAccount = await program.provider.connection.getTokenAccountBalance(from);
-    // const toAccount = await program.provider.connection.getTokenAccountBalance(to);
+    // Ensure it has the right data.
+    assert.equal(contentAccount.author.toBase58(), fromKeypair.publicKey.toBase58());
+    assert.equal(contentAccount.contentLink, 'content link');
+    assert.equal(fromAccount.value.amount, new anchor.BN(9900));
+    assert.equal(toAccount.value.amount, new anchor.BN(100));
+    assert.ok(contentAccount.timestamp);
+  });
 
-    // // Ensure it has the right data.
-    // assert.equal(contentAccount.author.toBase58(), program.provider.wallet.publicKey.toBase58());
-    // assert.equal(contentAccount.title, 'dune');
-    // assert.equal(contentAccount.essay, 'a good review');
-    // assert.equal(fromAccount.value.amount, new anchor.BN(9000));
-    // assert.equal(toAccount.value.amount, new anchor.BN(1000));
-    // assert.ok(contentAccount.timestamp);
-});
 });
