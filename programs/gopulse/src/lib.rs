@@ -14,7 +14,7 @@ pub mod gopulse {
         let clock: Clock = Clock::get().unwrap();
         
         if content_link.chars().count() < 1 {
-            return Err(ErrorCode::ContentRequired.into())
+            return Err(ErrorCode::ContentRequired.into())  
         }
 
         if amount > 10000 {
@@ -38,8 +38,31 @@ pub mod gopulse {
         //transfer staked GPT to vault
 
         let cpi_accounts = Transfer {
-            from: ctx.accounts.from.to_account_info(),
-            to: ctx.accounts.to.to_account_info(),
+            from: ctx.accounts.poster.to_account_info(),
+            to: ctx.accounts.vault.to_account_info(),
+            authority: ctx.accounts.author.to_account_info(),
+        };
+        let cpi_program = ctx.accounts.token_program.to_account_info();
+        let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
+
+        token::transfer(cpi_ctx, amount)?;
+
+        Ok(())
+    }
+
+    pub fn validate_v0(ctx: Context<ValidateContent>, amount: u64) -> Result<()> {
+        let validate: &mut Account<Validate> = &mut ctx.accounts.validate;
+        let author: &Signer = &ctx.accounts.author;
+        let clock: Clock = Clock::get().unwrap();
+
+        validate.author = *author.key;
+        validate.timestamp = clock.unix_timestamp;
+        validate.amount = amount;
+        validate.key = ctx.accounts.key.key();
+
+        let cpi_accounts = Transfer {
+            from: ctx.accounts.validator.to_account_info(),
+            to: ctx.accounts.vault.to_account_info(),
             authority: ctx.accounts.author.to_account_info(),
         };
         let cpi_program = ctx.accounts.token_program.to_account_info();
@@ -58,9 +81,24 @@ pub struct PostContent<'info> {
     #[account(mut)]
     pub author: Signer<'info>,
     #[account(mut)]
-    pub from: Account<'info, TokenAccount>,
+    pub poster: Account<'info, TokenAccount>,
     #[account(mut)]
-    pub to: Account<'info, TokenAccount>,
+    pub vault: Account<'info, TokenAccount>,
+    pub token_program: Program<'info, Token>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct ValidateContent<'info> {
+    #[account(init, payer = author, space = Validate::LEN)]
+    pub validate: Account<'info, Validate>,
+    #[account(mut)]
+    pub author: Signer<'info>, 
+    pub key: Account<'info, Content>,
+    #[account(mut)]
+    pub validator: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub vault: Account<'info, TokenAccount>,
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
 }
@@ -72,6 +110,14 @@ pub struct Content {
     pub content_link: String,
     pub amount: u64,
     pub validator_threshold: u64,
+}
+
+#[account]
+pub struct Validate {
+    pub author: Pubkey,
+    pub key: Pubkey,
+    pub timestamp: i64,
+    pub amount: u64,
 }
 
 const DISCRIMINATOR_LENGTH: usize = 8;
@@ -89,6 +135,14 @@ impl Content {
         + STRING_LENGTH_PREFIX + MAX_TOPIC_LENGTH // Topic.
         + STRING_LENGTH_PREFIX + MAX_CONTENT_LENGTH
         + REVIEW_LENGTH; // Content.
+}
+
+impl Validate {
+    const LEN: usize = DISCRIMINATOR_LENGTH
+        + PUBLIC_KEY_LENGTH // TweetKey.
+        + PUBLIC_KEY_LENGTH // TweetKey.
+        + TIMESTAMP_LENGTH // Timestamp.
+        + PUBLIC_KEY_LENGTH; // Verifier.
 }
 
 #[error_code]
