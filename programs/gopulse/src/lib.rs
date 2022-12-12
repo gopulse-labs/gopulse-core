@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer, MintTo};
+use anchor_lang::system_program;
 
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
@@ -7,7 +7,7 @@ declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 pub mod gopulse {
     use super::*;
 
-    pub fn post_v0(ctx: Context<PostContent>, content_link: String, amount: u64, validator_threshold: u64) -> Result<()> {
+    pub fn post_v0(ctx: Context<PostContent>, content_link: String, amount: u64, validator_threshold: i64) -> Result<()> {
         let content: &mut Account<Content> = &mut ctx.accounts.content;
         let author: &Signer = &ctx.accounts.author;
         // let accounts = &ctx.remaining_accounts;
@@ -15,10 +15,6 @@ pub mod gopulse {
         
         if content_link.chars().count() < 1 {
             return Err(ErrorCode::ContentRequired.into())  
-        }
-
-        if amount > 10000 {
-            return Err(ErrorCode::StakeToLarge.into())
         }
 
         if validator_threshold % 2 == 0 {
@@ -34,18 +30,17 @@ pub mod gopulse {
         content.content_link = content_link;
         content.amount = amount;
         content.validator_threshold = validator_threshold;
+        content.validator_count = 0;
+        content.validator_threshold_reached = false;
 
-        //transfer staked GPT to vault
-
-        let cpi_accounts = Transfer {
-            from: ctx.accounts.poster.to_account_info(),
-            to: ctx.accounts.vault.to_account_info(),
-            authority: ctx.accounts.author.to_account_info(),
-        };
-        let cpi_program = ctx.accounts.token_program.to_account_info();
-        let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
-
-        token::transfer(cpi_ctx, amount)?;
+        //transfer SOL to vault
+        let cpi_context = CpiContext::new(
+            ctx.accounts.system_program.to_account_info(), 
+            system_program::Transfer {
+                from: ctx.accounts.author.to_account_info(),
+                to: ctx.accounts.vault_keypair.clone(),
+            });
+        system_program::transfer(cpi_context, amount)?;
 
         Ok(())
     }
@@ -60,15 +55,25 @@ pub mod gopulse {
         validate.amount = amount;
         validate.key = ctx.accounts.key.key();
 
-        let cpi_accounts = Transfer {
-            from: ctx.accounts.validator.to_account_info(),
-            to: ctx.accounts.vault.to_account_info(),
-            authority: ctx.accounts.author.to_account_info(),
-        };
-        let cpi_program = ctx.accounts.token_program.to_account_info();
-        let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
+        let content: &mut Account<Content> = &mut ctx.accounts.key;
+        let key_count = &mut content.validator_count;
+        *key_count += 53;
+        validate.count = *key_count;
 
-        token::transfer(cpi_ctx, amount)?;
+        let key_threshold = &mut content.validator_threshold;
+
+        if validate.count == *key_threshold {
+            let key_threshold_reached = &mut content.validator_threshold_reached;
+            *key_threshold_reached = true;
+        }
+
+        let cpi_context = CpiContext::new(
+            ctx.accounts.system_program.to_account_info(), 
+            system_program::Transfer {
+                from: ctx.accounts.author.to_account_info(),
+                to: ctx.accounts.vault_keypair.clone(),
+            });
+        system_program::transfer(cpi_context, amount)?;
 
         Ok(())
     }
@@ -81,10 +86,8 @@ pub struct PostContent<'info> {
     #[account(mut)]
     pub author: Signer<'info>,
     #[account(mut)]
-    pub poster: Account<'info, TokenAccount>,
-    #[account(mut)]
-    pub vault: Account<'info, TokenAccount>,
-    pub token_program: Program<'info, Token>,
+    /// CHECK: This is not dangerous because we just pay to this account
+    pub vault_keypair: AccountInfo<'info>,
     pub system_program: Program<'info, System>,
 }
 
@@ -94,12 +97,11 @@ pub struct ValidateContent<'info> {
     pub validate: Account<'info, Validate>,
     #[account(mut)]
     pub author: Signer<'info>, 
+    #[account(mut)]
     pub key: Account<'info, Content>,
     #[account(mut)]
-    pub validator: Account<'info, TokenAccount>,
-    #[account(mut)]
-    pub vault: Account<'info, TokenAccount>,
-    pub token_program: Program<'info, Token>,
+    /// CHECK: This is not dangerous because we just pay to this account
+    pub vault_keypair: AccountInfo<'info>,
     pub system_program: Program<'info, System>,
 }
 
@@ -109,7 +111,9 @@ pub struct Content {
     pub timestamp: i64,
     pub content_link: String,
     pub amount: u64,
-    pub validator_threshold: u64,
+    pub validator_threshold: i64,
+    pub validator_count: i64,
+    pub validator_threshold_reached: bool,
 }
 
 #[account]
@@ -118,6 +122,7 @@ pub struct Validate {
     pub key: Pubkey,
     pub timestamp: i64,
     pub amount: u64,
+    pub count: i64,
 }
 
 const DISCRIMINATOR_LENGTH: usize = 8;
@@ -149,8 +154,6 @@ impl Validate {
 pub enum ErrorCode {
     #[msg("Content link Required")]
     ContentRequired,
-    #[msg("Cannot stake more than 10,000 GPT")]
-    StakeToLarge,
     #[msg("Validator Threshold must be odd")]
     ThresholdEven,
     #[msg("Validator Threshold must be 51 or greater")]
