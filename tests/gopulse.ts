@@ -43,7 +43,7 @@ describe("gopulse", () => {
 
   it('Post new content', async () => {
     // content = anchor.web3.Keypair.generate();
-        await program.rpc.postV0('content link', new anchor.BN(17000000), new anchor.BN(53), {
+        await program.rpc.postV0('content link', new anchor.BN(17000000), new anchor.BN(17), {
             accounts: {
                 content: content.publicKey,
                 author: posterKeypair.publicKey,
@@ -52,7 +52,6 @@ describe("gopulse", () => {
                 vault,
                 systemProgram: anchor.web3.SystemProgram.programId,
             },
-            // remainingAccounts: contentAccounts,
             signers: [content, posterKeypair],
         });
 
@@ -83,35 +82,77 @@ describe("gopulse", () => {
   it('Validate content', async () => {
     contentAccount = await program.account.content.all();
     let theKey = contentAccount[0].publicKey;
-    const validate = anchor.web3.Keypair.generate();
-    await program.rpc.validateV0(new anchor.BN(17000000), {
-        accounts: {
-            validate: validate.publicKey,
-            author: validatorKeypair.publicKey,
-            vaultKeypair: vaultKeypair.publicKey,
-            key: theKey,
-            systemProgram: anchor.web3.SystemProgram.programId,
-        },
-        signers: [validate, validatorKeypair],
-    });
 
-    const validateAccount = await program.account.validate.fetch(validate.publicKey);
-    console.log("Validate Content Key: " + validateAccount.key);
-    console.log("Validate Amount: " + validateAccount.amount);
-    console.log("Validate Author: " + validateAccount.author);
-    console.log("Validate Count: " + validateAccount.count);
-    console.log("Validate Timestamp: " + validateAccount.timestamp);
+    let theVec = [];
+
+      for (let index = 0; index < 4; index++) {
+
+        // let contentAccounts = await program.account.validate.all();
+        // console.log(contentAccounts);
+        const validate = anchor.web3.Keypair.generate();
+        // theVec.push(validate.publicKey);
+        await program.rpc.validateV0(new anchor.BN(17000000), "long", {
+            accounts: {
+                validate: validate.publicKey,
+                author: validatorKeypair.publicKey,
+                vaultKeypair: vaultKeypair.publicKey,
+                key: theKey,
+                systemProgram: anchor.web3.SystemProgram.programId,
+            },
+            remainingAccounts: theVec,
+            signers: [validate, validatorKeypair],
+        });
     
-    let contentAccount1 = await program.account.content.fetch(content.publicKey);
-    console.log("Content Validator Count: " + contentAccount1.validatorCount);
-    console.log("Content Validator Reached: " + contentAccount1.validatorThresholdReached);
+        const validateAccount = await program.account.validate.fetch(validate.publicKey);
+        console.log("Validate Content Key: " + validateAccount.key);
+        console.log("Validate Amount: " + validateAccount.amount);
+        console.log("Validate Author: " + validateAccount.author);
+        console.log("Validate Count: " + validateAccount.count);
+        console.log("Validate Position: " + validateAccount.position);
+        console.log("Validate Timestamp: " + validateAccount.timestamp);
+        
+        let contentAccount1 = await program.account.content.fetch(content.publicKey);
+        console.log("Content Validator Count: " + contentAccount1.validatorCount);
+        console.log("Content Validator Reached: " + contentAccount1.validatorThresholdReached);
+    
+        const getValidatorBalance = await program.provider.connection.getBalance(validatorKeypair.publicKey);
+        const getVaultBalance = await program.provider.connection.getBalance(vaultKeypair.publicKey);
+    
+        console.log("Poster Balance: " + getValidatorBalance);
+        console.log("Vault Balance: " + getVaultBalance);
+      }
 
-    const getValidatorBalance = await program.provider.connection.getBalance(validatorKeypair.publicKey);
-    const getVaultBalance = await program.provider.connection.getBalance(vaultKeypair.publicKey);
-
-    console.log("Poster Balance: " + getValidatorBalance);
-    console.log("Vault Balance: " + getVaultBalance);
-
+      for (let index = 0; index < 4; index++) {
+        const validate = anchor.web3.Keypair.generate();
+        await program.rpc.validateV0(new anchor.BN(17000000), "short", {
+            accounts: {
+                validate: validate.publicKey,
+                author: validatorKeypair.publicKey,
+                vaultKeypair: vaultKeypair.publicKey,
+                key: theKey,
+                systemProgram: anchor.web3.SystemProgram.programId,
+            },
+            signers: [validate, validatorKeypair],
+        });
+    
+        const validateAccount = await program.account.validate.fetch(validate.publicKey);
+        console.log("Validate Content Key: " + validateAccount.key);
+        console.log("Validate Amount: " + validateAccount.amount);
+        console.log("Validate Author: " + validateAccount.author);
+        console.log("Validate Count: " + validateAccount.count);
+        console.log("Validate Position: " + validateAccount.position);
+        console.log("Validate Timestamp: " + validateAccount.timestamp);
+        
+        let contentAccount1 = await program.account.content.fetch(content.publicKey);
+        console.log("Content Validator Count: " + contentAccount1.validatorCount);
+        console.log("Content Validator Reached: " + contentAccount1.validatorThresholdReached);
+    
+        const getValidatorBalance = await program.provider.connection.getBalance(validatorKeypair.publicKey);
+        const getVaultBalance = await program.provider.connection.getBalance(vaultKeypair.publicKey);
+    
+        console.log("Poster Balance: " + getValidatorBalance);
+        console.log("Vault Balance: " + getVaultBalance);
+      }
   });
 
 });

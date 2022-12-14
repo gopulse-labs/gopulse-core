@@ -21,7 +21,7 @@ pub mod gopulse {
             return Err(ErrorCode::ThresholdEven.into())
         }
 
-        if validator_threshold < 51 {
+        if validator_threshold < 7 {
             return Err(ErrorCode::ThresholdTooSmall.into())
         }
 
@@ -45,28 +45,35 @@ pub mod gopulse {
         Ok(())
     }
 
-    pub fn validate_v0(ctx: Context<ValidateContent>, amount: u64) -> Result<()> {
+    pub fn validate_v0(ctx: Context<ValidateContent>, amount: u64, position: String) -> Result<()> {
         let validate: &mut Account<Validate> = &mut ctx.accounts.validate;
         let author: &Signer = &ctx.accounts.author;
         let clock: Clock = Clock::get().unwrap();
 
+        let vec: Vec<AccountInfo> = ctx.remaining_accounts.to_vec();
+
         validate.author = *author.key;
         validate.timestamp = clock.unix_timestamp;
         validate.amount = amount;
+        validate.position = position;
         validate.key = ctx.accounts.key.key();
 
         let content: &mut Account<Content> = &mut ctx.accounts.key;
         let key_count = &mut content.validator_count;
-        *key_count += 53;
+        *key_count += 1;
         validate.count = *key_count;
 
-        let key_threshold = &mut content.validator_threshold;
+        let key_threshold = content.validator_threshold;
+        let key_threshold_reached = &mut content.validator_threshold_reached;
 
-        if validate.count == *key_threshold {
-            let key_threshold_reached = &mut content.validator_threshold_reached;
-            *key_threshold_reached = true;
+        if key_threshold_reached == &true {
+            return Err(ErrorCode::ThresholdReached.into())
         }
 
+        if validate.count == key_threshold {
+            *key_threshold_reached = true;
+        }
+     
         let cpi_context = CpiContext::new(
             ctx.accounts.system_program.to_account_info(), 
             system_program::Transfer {
@@ -123,6 +130,7 @@ pub struct Validate {
     pub timestamp: i64,
     pub amount: u64,
     pub count: i64,
+    pub position: String,
 }
 
 const DISCRIMINATOR_LENGTH: usize = 8;
@@ -158,4 +166,6 @@ pub enum ErrorCode {
     ThresholdEven,
     #[msg("Validator Threshold must be 51 or greater")]
     ThresholdTooSmall,
+    #[msg("Validator Threshold has been reached")]
+    ThresholdReached,
 }
