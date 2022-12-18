@@ -7,10 +7,11 @@ declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 pub mod gopulse {
     use super::*;
 
-    pub fn post_v0(ctx: Context<PostContent>, content_link: String, amount: u64, validator_threshold: i64) -> Result<()> {
+    pub fn post_v0(ctx: Context<PostContent>, content_link: String, 
+                amount: u64, validator_threshold: i64) -> Result<()> {
+
         let content: &mut Account<Content> = &mut ctx.accounts.content;
         let author: &Signer = &ctx.accounts.author;
-        // let accounts = &ctx.remaining_accounts;
         let clock: Clock = Clock::get().unwrap();
         
         if content_link.chars().count() < 1 {
@@ -30,6 +31,9 @@ pub mod gopulse {
         content.content_link = content_link;
         content.amount = amount;
         content.validator_threshold = validator_threshold;
+        content.total_pool = 0;
+        content.long_pool = 0;
+        content.short_pool = 0;
         content.validator_count = 0;
         content.validator_threshold_reached = false;
 
@@ -46,11 +50,10 @@ pub mod gopulse {
     }
 
     pub fn validate_v0(ctx: Context<ValidateContent>, amount: u64, position: String) -> Result<()> {
+
         let validate: &mut Account<Validate> = &mut ctx.accounts.validate;
         let author: &Signer = &ctx.accounts.author;
         let clock: Clock = Clock::get().unwrap();
-
-        let vec: Vec<AccountInfo> = ctx.remaining_accounts.to_vec();
 
         validate.author = *author.key;
         validate.timestamp = clock.unix_timestamp;
@@ -59,19 +62,24 @@ pub mod gopulse {
         validate.key = ctx.accounts.key.key();
 
         let content: &mut Account<Content> = &mut ctx.accounts.key;
-        let key_count = &mut content.validator_count;
-        *key_count += 1;
-        validate.count = *key_count;
+        content.validator_count += 1;
+        validate.count = content.validator_count;
+        content.total_pool += amount;
 
-        let key_threshold = content.validator_threshold;
-        let key_threshold_reached = &mut content.validator_threshold_reached;
+        if validate.position == "long" {
+            content.long_pool += amount;
+        }
 
-        if key_threshold_reached == &true {
+        if validate.position == "short" {
+            content.short_pool += amount;
+        }
+
+        if content.validator_threshold_reached == true {
             return Err(ErrorCode::ThresholdReached.into())
         }
 
-        if validate.count == key_threshold {
-            *key_threshold_reached = true;
+        if validate.count == content.validator_threshold {
+            content.validator_threshold_reached = true;
         }
      
         let cpi_context = CpiContext::new(
@@ -88,7 +96,7 @@ pub mod gopulse {
 
 #[derive(Accounts)]
 pub struct PostContent<'info> {
-    #[account(init, payer = author, space = Content::LEN)]
+    #[account(init, payer = author, space = Content::LEN, seeds = [b"content", author.key().as_ref()], bump)]
     pub content: Account<'info, Content>,
     #[account(mut)]
     pub author: Signer<'info>,
@@ -100,7 +108,7 @@ pub struct PostContent<'info> {
 
 #[derive(Accounts)]
 pub struct ValidateContent<'info> {
-    #[account(init, payer = author, space = Validate::LEN)]
+    #[account(init, payer = author, space = Validate::LEN, seeds = [b"validate", author.key().as_ref()], bump)]
     pub validate: Account<'info, Validate>,
     #[account(mut)]
     pub author: Signer<'info>, 
@@ -118,6 +126,9 @@ pub struct Content {
     pub timestamp: i64,
     pub content_link: String,
     pub amount: u64,
+    pub total_pool: u64,
+    pub short_pool: u64,
+    pub long_pool: u64,
     pub validator_threshold: i64,
     pub validator_count: i64,
     pub validator_threshold_reached: bool,
