@@ -36,6 +36,8 @@ pub mod gopulse {
         content.short_pool = 0;
         content.validator_count = 0;
         content.validator_threshold_reached = false;
+        content.long_win = false;
+        content.short_win = false;
 
         //transfer SOL to vault
         let cpi_context = CpiContext::new(
@@ -78,8 +80,14 @@ pub mod gopulse {
             return Err(ErrorCode::ThresholdReached.into())
         }
 
-        if validate.count == content.validator_threshold {
+        if validate.count >= content.validator_threshold {
             content.validator_threshold_reached = true;
+            if content.short_pool > content.long_pool {
+                content.short_win = true;
+            }
+            else if content.long_pool > content.short_pool {
+                content.long_win = true;
+            }
         }
      
         let cpi_context = CpiContext::new(
@@ -129,6 +137,8 @@ pub struct Content {
     pub total_pool: u64,
     pub short_pool: u64,
     pub long_pool: u64,
+    pub short_win: bool,
+    pub long_win: bool,
     pub validator_threshold: i64,
     pub validator_count: i64,
     pub validator_threshold_reached: bool,

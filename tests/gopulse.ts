@@ -16,7 +16,6 @@ describe("gopulse", () => {
   let vaultKeypair = null;
   let validatorKeypair = null;
   let contentAccount = null;
-  let content = null;
 
   it("Initialize test state", async () => {
 
@@ -24,7 +23,7 @@ describe("gopulse", () => {
     console.log("Created Vault: " + vaultKeypair.publicKey);
 
     posterKeypair = await anchor.web3.Keypair.generate();
-    const signature2 = await program.provider.connection.requestAirdrop(posterKeypair.publicKey, 1000000000);
+    const signature2 = await program.provider.connection.requestAirdrop(posterKeypair.publicKey, 100000000000);
     await program.provider.connection.confirmTransaction(signature2);
     console.log("Created Poster: " + posterKeypair.publicKey);
 
@@ -48,7 +47,7 @@ describe("gopulse", () => {
         ],
         program.programId
       )
-        await program.rpc.postV0('content link', new anchor.BN(17000000), new anchor.BN(17), {
+        await program.rpc.postV0('content link', new anchor.BN(11000000000), new anchor.BN(7), {
             accounts: {
                 content: contentPDA,
                 author: posterKeypair.publicKey,
@@ -104,7 +103,7 @@ describe("gopulse", () => {
         program.programId
       )
 
-        await program.rpc.validateV0(new anchor.BN(180000000), "long", {
+        await program.rpc.validateV0(new anchor.BN(17000000000), "long", {
             accounts: {
                 validate: validatePDA,
                 author: validatorKeypair.publicKey,
@@ -127,6 +126,9 @@ describe("gopulse", () => {
         console.log("Content Validator Count: " + contentAccount1.validatorCount);
         console.log("Content Total Pool: " + contentAccount1.totalPool);
         console.log("Content Long Pool: " + contentAccount1.longPool);
+        console.log("Content Short Pool: " + contentAccount1.shortPool);
+        console.log("Content Long Win: " + contentAccount1.longWin);
+        console.log("Content Short Win: " + contentAccount1.shortWin);
         console.log("Content Validator Reached: " + contentAccount1.validatorThresholdReached);
     
         const getValidatorBalance = await program.provider.connection.getBalance(validatorKeypair.publicKey);
@@ -151,7 +153,7 @@ describe("gopulse", () => {
             ],
             program.programId
           )
-        await program.rpc.validateV0(new anchor.BN(170000000), "short", {
+        await program.rpc.validateV0(new anchor.BN(14000000000), "short", {
             accounts: {
                 validate: validatePDA,
                 author: validatorKeypair.publicKey,
@@ -174,6 +176,9 @@ describe("gopulse", () => {
         console.log("Content Validator Count: " + contentAccount1.validatorCount);
         console.log("Content Total Pool: " + contentAccount1.totalPool);
         console.log("Content Long Pool: " + contentAccount1.longPool);
+        console.log("Content Short Pool: " + contentAccount1.shortPool);
+        console.log("Content Long Win: " + contentAccount1.longWin);
+        console.log("Content Short Win: " + contentAccount1.shortWin);
         console.log("Content Validator Reached: " + contentAccount1.validatorThresholdReached);
     
         const getValidatorBalance = await program.provider.connection.getBalance(validatorKeypair.publicKey);
