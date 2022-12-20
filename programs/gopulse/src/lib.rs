@@ -100,6 +100,31 @@ pub mod gopulse {
 
         Ok(())
     }
+
+    pub fn collect_v0(ctx: Context<Collect>) -> Result<()> {
+
+        let validate: &mut Account<Validate> = &mut ctx.accounts.validate;
+        let author: &Signer = &ctx.accounts.author;
+        let clock: Clock = Clock::get().unwrap();
+        let content: &mut Account<Content> = &mut ctx.accounts.key;
+
+        if content.long_win == true && validate.position == "long" {
+            let percentage = validate.amount / content.long_pool;
+            let dispersement = content.short_pool * percentage;
+            let final_dispersement = dispersement * 0.9 as u64;
+
+            // let cpi_context = CpiContext::new(
+            //     ctx.accounts.system_program.to_account_info(), 
+            //     system_program::Transfer {
+            //         from: ctx.accounts.vault_keypair.to_account_info(),
+            //         to: ctx.accounts.author.to_account_info(),
+            //     });
+            // system_program::transfer(cpi_context, final_dispersement)?;            
+        }
+
+        Ok(())
+    }
+
 }
 
 #[derive(Accounts)]
@@ -117,6 +142,20 @@ pub struct PostContent<'info> {
 #[derive(Accounts)]
 pub struct ValidateContent<'info> {
     #[account(init, payer = author, space = Validate::LEN, seeds = [b"validate", author.key().as_ref()], bump)]
+    pub validate: Account<'info, Validate>,
+    #[account(mut)]
+    pub author: Signer<'info>, 
+    #[account(mut)]
+    pub key: Account<'info, Content>,
+    #[account(mut)]
+    /// CHECK: This is not dangerous because we just pay to this account
+    pub vault_keypair: AccountInfo<'info>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct Collect<'info> {
+    #[account()]
     pub validate: Account<'info, Validate>,
     #[account(mut)]
     pub author: Signer<'info>, 
@@ -189,4 +228,6 @@ pub enum ErrorCode {
     ThresholdTooSmall,
     #[msg("Validator Threshold has been reached")]
     ThresholdReached,
+    #[msg("No Dispersement Available")]
+    NoDispersement,
 }
