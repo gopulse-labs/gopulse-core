@@ -30,6 +30,14 @@ describe("gopulse", () => {
 
     const getPosterBalance = await program.provider.connection.getBalance(posterKeypair.publicKey);
     console.log("Poster Balance: " + getPosterBalance);
+
+        const [vaultPDA, _] = await PublicKey.findProgramAddress(
+        [
+          anchor.utils.bytes.utf8.encode('vault'),
+          posterKeypair.publicKey.toBuffer(),
+        ],
+        program.programId
+      )
   });
 
   it('Post new content', async () => {
@@ -40,11 +48,19 @@ describe("gopulse", () => {
         ],
         program.programId
       )
+
+       const [vaultPDA, _i] = await PublicKey.findProgramAddress(
+        [
+          anchor.utils.bytes.utf8.encode('vault'),
+          posterKeypair.publicKey.toBuffer(),
+        ],
+        program.programId
+      )
         await program.rpc.postV0('content link', new anchor.BN(11000000000), new anchor.BN(9), {
             accounts: {
                 content: contentPDA,
                 author: posterKeypair.publicKey,
-                vaultKeypair: vaultKeypair.publicKey,
+                vaultKeypair: vaultPDA,
                 poster,
                 vault,
                 systemProgram: anchor.web3.SystemProgram.programId,
@@ -96,11 +112,19 @@ describe("gopulse", () => {
         program.programId
       )
 
+      const [vaultPDA, _i] = await PublicKey.findProgramAddress(
+        [
+          anchor.utils.bytes.utf8.encode('vault'),
+          posterKeypair.publicKey.toBuffer(),
+        ],
+        program.programId
+      )
+
         await program.rpc.validateV0(new anchor.BN(17000000000), "long", {
             accounts: {
                 validate: validatePDA,
                 author: validatorKeypair1.publicKey,
-                vaultKeypair: vaultKeypair.publicKey,
+                vaultKeypair: vaultPDA,
                 key: theKey,
                 systemProgram: anchor.web3.SystemProgram.programId,
             },

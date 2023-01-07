@@ -133,7 +133,7 @@ pub struct PostContent<'info> {
     pub content: Account<'info, Content>,
     #[account(mut)]
     pub author: Signer<'info>,
-    #[account(mut)]
+    #[account(init, payer = author, space = Content::LEN, seeds = [b"vault", author.key().as_ref()], bump)]
     /// CHECK: This is not dangerous because we just pay to this account
     pub vault_keypair: AccountInfo<'info>,
     pub system_program: Program<'info, System>,
