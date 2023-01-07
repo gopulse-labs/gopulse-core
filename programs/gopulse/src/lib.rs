@@ -148,6 +148,9 @@ pub struct ValidateContent<'info> {
     #[account(mut)]
     pub key: Account<'info, Content>,
     #[account(mut)]
+    /// CHECK:
+    poster_key: AccountInfo<'info>,
+    #[account(mut)]
     /// CHECK: This is not dangerous because we just pay to this account
     pub vault_keypair: AccountInfo<'info>,
     pub system_program: Program<'info, System>,
@@ -209,6 +212,8 @@ impl Content {
         + STRING_LENGTH_PREFIX + MAX_CONTENT_LENGTH
         + REVIEW_LENGTH; // Content.
 }
+
+
 
 impl Validate {
     const LEN: usize = DISCRIMINATOR_LENGTH
