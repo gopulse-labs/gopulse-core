@@ -12,16 +12,12 @@ describe("gopulse", () => {
 
   let poster = null;
   let posterKeypair = null;
-  let vault = null;
-  let vaultKeypair = null;
   let validatorKeypair = null;
   let validatorKeypair1 = null;
   let contentAccount = null;
 
   it("Initialize test state", async () => {
 
-    vaultKeypair = await anchor.web3.Keypair.generate();
-    console.log("Created Vault: " + vaultKeypair.publicKey);
 
     posterKeypair = await anchor.web3.Keypair.generate();
     const signature2 = await program.provider.connection.requestAirdrop(posterKeypair.publicKey, 100000000000);
@@ -45,7 +41,7 @@ describe("gopulse", () => {
        const [vaultPDA, _i] = await PublicKey.findProgramAddress(
         [
           anchor.utils.bytes.utf8.encode('vault'),
-          posterKeypair.publicKey.toBuffer(),
+          contentPDA.toBuffer(),
         ],
         program.programId
       )
@@ -89,12 +85,20 @@ describe("gopulse", () => {
     contentAccount = await program.account.content.all();
     let theKey = contentAccount[0].publicKey;
 
-      for (let index = 0; index < 5; index++) {
+      for (let index = 0; index < 2; index++) {
 
     validatorKeypair1 = await anchor.web3.Keypair.generate();
     const signature4 = await program.provider.connection.requestAirdrop(validatorKeypair1.publicKey, 100000000000);
     await program.provider.connection.confirmTransaction(signature4);
     console.log("Created Validator: " + validatorKeypair1.publicKey);
+
+    const [contentPDA, _b] = await PublicKey.findProgramAddress(
+        [
+          anchor.utils.bytes.utf8.encode('content'),
+          posterKeypair.publicKey.toBuffer(),
+        ],
+        program.programId
+      )
 
     const [validatePDA, _] = await PublicKey.findProgramAddress(
         [
@@ -107,7 +111,7 @@ describe("gopulse", () => {
       const [vaultPDA, _i] = await PublicKey.findProgramAddress(
         [
           anchor.utils.bytes.utf8.encode('vault'),
-          posterKeypair.publicKey.toBuffer(),
+          contentPDA.toBuffer(),
         ],
         program.programId
       )
@@ -149,12 +153,20 @@ describe("gopulse", () => {
         console.log("----------------------------------------------------------------------");
       }
 
-      for (let index = 0; index < 4; index++) {
+      for (let index = 0; index < 1; index++) {
 
         validatorKeypair = await anchor.web3.Keypair.generate();
         const signature4 = await program.provider.connection.requestAirdrop(validatorKeypair.publicKey, 100000000000);
         await program.provider.connection.confirmTransaction(signature4);
         console.log("Created Validator: " + validatorKeypair.publicKey);
+
+        const [contentPDA, _b] = await PublicKey.findProgramAddress(
+            [
+              anchor.utils.bytes.utf8.encode('content'),
+              posterKeypair.publicKey.toBuffer(),
+            ],
+            program.programId
+          )
     
         const [validatePDA, _] = await PublicKey.findProgramAddress(
             [
@@ -166,7 +178,7 @@ describe("gopulse", () => {
           const [vaultPDA, _i] = await PublicKey.findProgramAddress(
             [
               anchor.utils.bytes.utf8.encode('vault'),
-              posterKeypair.publicKey.toBuffer(),
+              contentPDA.toBuffer(),
             ],
             program.programId
           )
@@ -214,23 +226,55 @@ describe("gopulse", () => {
     contentAccount = await program.account.content.all();
     let theKey = contentAccount[0].publicKey;
 
-    const [validatePDA, _] = await PublicKey.findProgramAddress(
+    const [contentPDA, _b] = await PublicKey.findProgramAddress(
         [
-          anchor.utils.bytes.utf8.encode('validate'),
-          validatorKeypair1.publicKey.toBuffer(),
+          anchor.utils.bytes.utf8.encode('content'),
+          posterKeypair.publicKey.toBuffer(),
         ],
         program.programId
       )
-    await program.rpc.collectV0({
+
+    const [vaultPDA, _i] = await PublicKey.findProgramAddress(
+        [
+          anchor.utils.bytes.utf8.encode('vault'),
+          contentPDA.toBuffer(),
+        ],
+        program.programId
+      )
+
+      const [validatePDA, _] = await PublicKey.findProgramAddress(
+        [
+          anchor.utils.bytes.utf8.encode('validate'),
+          validatorKeypair.publicKey.toBuffer(),
+        ],
+        program.programId
+      )
+
+      const getValidatorBalance = await program.provider.connection.getBalance(validatorKeypair.publicKey);
+        const getVaultBalance = await program.provider.connection.getBalance(vaultPDA);
+
+        console.log("Poster Balance: " + getValidatorBalance);
+        console.log("Vault Balance: " + getVaultBalance);
+        console.log("----------------------------------------------------------------------");
+
+    await program.rpc.collectV0(program.programId, {
         accounts: {
             validate: validatePDA,
-            author: validatorKeypair1.publicKey,
-            vaultKeypair: vaultKeypair.publicKey,
+            author: validatorKeypair.publicKey,
+            vaultKeypair: vaultPDA,
             key: theKey,
             systemProgram: anchor.web3.SystemProgram.programId,
         },
-        signers: [validatorKeypair1],
+        signers: [validatorKeypair],
     });
+    
+
+      const getValidatorBalance1 = await program.provider.connection.getBalance(validatorKeypair.publicKey);
+      const getVaultBalance1 = await program.provider.connection.getBalance(vaultPDA)
+
+        console.log("Poster Balance: " + getValidatorBalance1);
+        console.log("Vault Balance: " + getVaultBalance1);
+        console.log("----------------------------------------------------------------------");
   });
 
 });

@@ -1,5 +1,9 @@
 use anchor_lang::prelude::*;
 use anchor_lang::system_program;
+use anchor_lang::{
+    prelude::*,
+    solana_program::{program::invoke_signed, system_instruction},
+};
 
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
@@ -101,26 +105,41 @@ pub mod gopulse {
         Ok(())
     }
 
-    pub fn collect_v0(ctx: Context<Collect>) -> Result<()> {
+    pub fn collect_v0(ctx: Context<Collect>, program: Pubkey) -> Result<()> {
 
         let validate: &mut Account<Validate> = &mut ctx.accounts.validate;
         let author: &Signer = &ctx.accounts.author;
         let clock: Clock = Clock::get().unwrap();
         let content: &mut Account<Content> = &mut ctx.accounts.key;
+        let vault = &mut ctx.accounts.vault_keypair.key;
 
         if content.long_win == true && validate.position == "long" {
             let percentage = validate.amount / content.long_pool;
             let dispersement = content.short_pool * percentage;
-            let final_dispersement = dispersement * 0.9 as u64;
-
-            // let cpi_context = CpiContext::new(
-            //     ctx.accounts.system_program.to_account_info(), 
-            //     system_program::Transfer {
-            //         from: ctx.accounts.vault_keypair.to_account_info(),
-            //         to: ctx.accounts.author.to_account_info(),
-            //     });
-            // system_program::transfer(cpi_context, final_dispersement)?;            
+            let final_dispersement = dispersement * 0.9 as u64;          
         }
+
+        **ctx.accounts.vault_keypair.try_borrow_mut_lamports()? -= 7000000;
+        **ctx.accounts.author.try_borrow_mut_lamports()? += 7000000;
+
+        // let (vault_pubkey, vault_bump_seed) = Pubkey::find_program_address(
+        //     &[b"vault", content.key().as_ref()],
+        //     &program
+        // );
+
+        // invoke_signed(
+        //     &system_instruction::transfer(&vault_pubkey, author.key, 7000000),
+        //     &[
+        //         ctx.accounts.vault_keypair.to_account_info(),
+        //         ctx.accounts.author.to_account_info(),
+        //         ctx.accounts.system_program.to_account_info()
+        //     ],
+        //     &[&[
+        //         b"vault".as_ref(),
+        //         content.key().as_ref(),
+        //         &[vault_bump_seed],
+        //     ]],
+        // );
 
         Ok(())
     }
@@ -133,7 +152,7 @@ pub struct PostContent<'info> {
     pub content: Account<'info, Content>,
     #[account(mut)]
     pub author: Signer<'info>,
-    #[account(init, payer = author, space = Content::LEN, seeds = [b"vault", author.key().as_ref()], bump)]
+    #[account(init, payer = author, space = Content::LEN, seeds = [b"vault", content.key().as_ref()], bump)]
     /// CHECK: This is not dangerous because we just pay to this account
     pub vault_keypair: AccountInfo<'info>,
     pub system_program: Program<'info, System>,
@@ -158,7 +177,7 @@ pub struct ValidateContent<'info> {
 
 #[derive(Accounts)]
 pub struct Collect<'info> {
-    #[account()]
+    #[account(mut)]
     pub validate: Account<'info, Validate>,
     #[account(mut)]
     pub author: Signer<'info>, 
@@ -212,8 +231,6 @@ impl Content {
         + STRING_LENGTH_PREFIX + MAX_CONTENT_LENGTH
         + REVIEW_LENGTH; // Content.
 }
-
-
 
 impl Validate {
     const LEN: usize = DISCRIMINATOR_LENGTH
