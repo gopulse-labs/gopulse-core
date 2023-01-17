@@ -43,7 +43,7 @@ describe("gopulse", () => {
         program.programId
       )
     
-    await program.rpc.postV0('content link', new anchor.BN(1000000000), new anchor.BN(9), {
+    await program.rpc.postV0('content link', new anchor.BN(2000000000), new anchor.BN(9), {
         accounts: {
             content: contentPDA,
             poster: posterKeypair.publicKey,
@@ -261,6 +261,10 @@ describe("gopulse", () => {
         console.log("Poster Post Balance: " + getPosterBalance1);
         console.log("Vault Post Balance: " + getVaultBalance3);
 
+        let contentAccount1 = await program.account.content.fetch(contentPDA);
+        console.log("Content Dispersed: " + contentAccount1.dispersed);
+        console.log("Content Disbursement: " + contentAccount1.dispersement);
+
   });
 
   it("Validator Dispersement", async () => {
@@ -284,7 +288,7 @@ describe("gopulse", () => {
         program.programId
       )
 
-      const [validatePDA, _] = await PublicKey.findProgramAddress(
+    const [validatePDA, _] = await PublicKey.findProgramAddress(
         [
           anchor.utils.bytes.utf8.encode('validate'),
           validatorKeypair1.publicKey.toBuffer(),
@@ -341,7 +345,6 @@ describe("gopulse", () => {
         console.log("Validate Count: " + validateAccount1.count);
         console.log("Validate Position: " + validateAccount1.position);
         console.log("Validate Timestamp: " + validateAccount1.timestamp);
-
   });
 
 });

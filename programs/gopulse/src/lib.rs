@@ -8,7 +8,7 @@ pub mod gopulse {
     use super::*;
 
     pub fn post_v0(ctx: Context<PostContent>, content_link: String, 
-                amount: f64, validator_threshold: i64) -> Result<()> {
+        amount: f64, validator_threshold: i64) -> Result<()> {
 
         let content: &mut Account<Content> = &mut ctx.accounts.content;
         let poster: &Signer = &ctx.accounts.poster;
@@ -41,7 +41,6 @@ pub mod gopulse {
         content.dispersed = false;
         content.dispersement = 0.0;
 
-        //transfer SOL to vault
         let cpi_context = CpiContext::new(
             ctx.accounts.system_program.to_account_info(), 
             system_program::Transfer {
@@ -112,6 +111,9 @@ pub mod gopulse {
         if content.long_win == true {
             let percentage = content.amount / content.long_pool;
             let dispersement = content.short_pool * percentage;
+
+            content.dispersed = true;
+            content.dispersement = dispersement;
     
             **ctx.accounts.vault.try_borrow_mut_lamports()? -= dispersement as u64;
             **ctx.accounts.poster.try_borrow_mut_lamports()? += dispersement as u64;
