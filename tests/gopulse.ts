@@ -26,10 +26,12 @@ describe("gopulse", () => {
   });
 
   it('Post Content', async () => {
+
+    let contentLink = "content-link";
     
     const [contentPDA, _] = await PublicKey.findProgramAddress(
         [
-          anchor.utils.bytes.utf8.encode('content'),
+          anchor.utils.bytes.utf8.encode(contentLink),
           posterKeypair.publicKey.toBuffer(),
         ],
         program.programId
@@ -43,7 +45,7 @@ describe("gopulse", () => {
         program.programId
       )
     
-    await program.rpc.postV0('content link', new anchor.BN(2000000000), new anchor.BN(9), {
+    await program.rpc.postV0(contentLink, new anchor.BN(2000000000), new anchor.BN(9), {
         accounts: {
             content: contentPDA,
             poster: posterKeypair.publicKey,

@@ -2,13 +2,15 @@
 seeds = false
 skip-lint = false
 [programs.localnet]
-gopulse = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+gopulse = "3tMVmtunb5Z73Gqo6EKCKCzCMJkTA5JkALdF6hLjdWWn"
+[programs.devnet]
+gopulse = "3tMVmtunb5Z73Gqo6EKCKCzCMJkTA5JkALdF6hLjdWWn"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "localnet"
+cluster = "devnet"
 wallet = "/home/tomdevito27/.config/solana/id.json"
 
 [scripts]

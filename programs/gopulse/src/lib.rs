@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_lang::system_program;
 
-declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
+declare_id!("3tMVmtunb5Z73Gqo6EKCKCzCMJkTA5JkALdF6hLjdWWn");
 
 #[program]
 pub mod gopulse {
@@ -155,8 +155,9 @@ pub mod gopulse {
 }
 
 #[derive(Accounts)]
+#[instruction(content_link: String)]
 pub struct PostContent<'info> {
-    #[account(init, payer = poster, space = Content::LEN, seeds = [b"content", poster.key().as_ref()], bump)]
+    #[account(init, payer = poster, space = Content::LEN, seeds = [content_link.as_bytes().as_ref(), poster.key().as_ref()], bump)]
     pub content: Account<'info, Content>,
     #[account(mut)]
     pub poster: Signer<'info>,
