@@ -14,6 +14,7 @@ describe("gopulse", () => {
   let validatorKeypair = null;
   let validatorKeypair1 = null;
   let contentAccount = null;
+  let contentLink = "content-link";
 
   it("Initialize test state", async () => {
     posterKeypair = await anchor.web3.Keypair.generate();
@@ -26,10 +27,8 @@ describe("gopulse", () => {
   });
 
   it('Post Content', async () => {
-
-    let contentLink = "content-link";
     
-    const [contentPDA, _] = await PublicKey.findProgramAddress(
+    const [contentPDA] = await PublicKey.findProgramAddress(
         [
           anchor.utils.bytes.utf8.encode(contentLink),
           posterKeypair.publicKey.toBuffer(),
@@ -37,7 +36,7 @@ describe("gopulse", () => {
         program.programId
       )
 
-    const [vaultPDA, _i] = await PublicKey.findProgramAddress(
+    const [vaultPDA] = await PublicKey.findProgramAddress(
         [
             anchor.utils.bytes.utf8.encode('vault'),
             contentPDA.toBuffer(),
@@ -67,7 +66,7 @@ describe("gopulse", () => {
 
     // Ensure it has the right data.
     assert.equal(contentAccount.poster.toBase58(), posterKeypair.publicKey.toBase58());
-    assert.equal(contentAccount.contentLink, 'content link');
+    assert.equal(contentAccount.contentLink, 'content-link');
     assert.ok(contentAccount.timestamp);
     
     console.log("Content Poster: " + contentAccount.poster);
@@ -91,15 +90,15 @@ describe("gopulse", () => {
         await program.provider.connection.confirmTransaction(signature4);
         console.log("Created Validator: " + validatorKeypair1.publicKey);
 
-        const [contentPDA, _b] = await PublicKey.findProgramAddress(
+        const [contentPDA] = await PublicKey.findProgramAddress(
             [
-            anchor.utils.bytes.utf8.encode('content'),
-            posterKeypair.publicKey.toBuffer(),
+              anchor.utils.bytes.utf8.encode(contentLink),
+              posterKeypair.publicKey.toBuffer(),
             ],
             program.programId
           )
 
-        const [validatePDA, _] = await PublicKey.findProgramAddress(
+        const [validatePDA] = await PublicKey.findProgramAddress(
             [
             anchor.utils.bytes.utf8.encode('validate'),
             validatorKeypair1.publicKey.toBuffer(),
@@ -107,7 +106,7 @@ describe("gopulse", () => {
             program.programId
           )
 
-        const [vaultPDA, _i] = await PublicKey.findProgramAddress(
+        const [vaultPDA] = await PublicKey.findProgramAddress(
             [
             anchor.utils.bytes.utf8.encode('vault'),
             contentPDA.toBuffer(),
@@ -159,22 +158,23 @@ describe("gopulse", () => {
         await program.provider.connection.confirmTransaction(signature4);
         console.log("Created Validator: " + validatorKeypair.publicKey);
 
-        const [contentPDA, _b] = await PublicKey.findProgramAddress(
+        const [contentPDA] = await PublicKey.findProgramAddress(
             [
-              anchor.utils.bytes.utf8.encode('content'),
+              anchor.utils.bytes.utf8.encode(contentLink),
               posterKeypair.publicKey.toBuffer(),
             ],
             program.programId
           )
     
-        const [validatePDA, _] = await PublicKey.findProgramAddress(
+        const [validatePDA] = await PublicKey.findProgramAddress(
             [
               anchor.utils.bytes.utf8.encode('validate'),
               validatorKeypair.publicKey.toBuffer(),
             ],
             program.programId
           )
-          const [vaultPDA, _i] = await PublicKey.findProgramAddress(
+        
+          const [vaultPDA] = await PublicKey.findProgramAddress(
             [
               anchor.utils.bytes.utf8.encode('vault'),
               contentPDA.toBuffer(),
@@ -225,15 +225,15 @@ describe("gopulse", () => {
     contentAccount = await program.account.content.all();
     let theKey = contentAccount[0].publicKey;
 
-    const [contentPDA, _b] = await PublicKey.findProgramAddress(
+    const [contentPDA] = await PublicKey.findProgramAddress(
         [
-          anchor.utils.bytes.utf8.encode('content'),
+          anchor.utils.bytes.utf8.encode(contentLink),
           posterKeypair.publicKey.toBuffer(),
         ],
         program.programId
       )
 
-    const [vaultPDA, _i] = await PublicKey.findProgramAddress(
+    const [vaultPDA] = await PublicKey.findProgramAddress(
         [
           anchor.utils.bytes.utf8.encode('vault'),
           contentPDA.toBuffer(),
@@ -274,15 +274,15 @@ describe("gopulse", () => {
     contentAccount = await program.account.content.all();
     let theKey = contentAccount[0].publicKey;
 
-    const [contentPDA, _b] = await PublicKey.findProgramAddress(
+    const [contentPDA] = await PublicKey.findProgramAddress(
         [
-          anchor.utils.bytes.utf8.encode('content'),
+          anchor.utils.bytes.utf8.encode(contentLink),
           posterKeypair.publicKey.toBuffer(),
         ],
         program.programId
       )
 
-    const [vaultPDA, _i] = await PublicKey.findProgramAddress(
+    const [vaultPDA] = await PublicKey.findProgramAddress(
         [
           anchor.utils.bytes.utf8.encode('vault'),
           contentPDA.toBuffer(),
@@ -290,7 +290,7 @@ describe("gopulse", () => {
         program.programId
       )
 
-    const [validatePDA, _] = await PublicKey.findProgramAddress(
+    const [validatePDA] = await PublicKey.findProgramAddress(
         [
           anchor.utils.bytes.utf8.encode('validate'),
           validatorKeypair1.publicKey.toBuffer(),

@@ -15,7 +15,7 @@ pub mod gopulse {
         let clock: Clock = Clock::get().unwrap();
         
         if content_link.chars().count() < 1 {
-            return Err(ErrorCode::ContentRequired.into())  
+            return Err(ErrorCode::ContentRequired.into())   
         }
 
         if validator_threshold % 2 == 0 {

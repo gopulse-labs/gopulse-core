@@ -10,7 +10,7 @@ gopulse = "3tMVmtunb5Z73Gqo6EKCKCzCMJkTA5JkALdF6hLjdWWn"
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "devnet"
+cluster = "localnet"
 wallet = "/home/tomdevito27/.config/solana/id.json"
 
 [scripts]
