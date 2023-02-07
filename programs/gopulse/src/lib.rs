@@ -7,7 +7,7 @@ declare_id!("3tMVmtunb5Z73Gqo6EKCKCzCMJkTA5JkALdF6hLjdWWn");
 pub mod gopulse {
     use super::*;
 
-    pub fn post_v0(ctx: Context<PostContent>, content_link: String, 
+    pub fn post_v0(ctx: Context<PostContent>, content_link: String, topic: String, 
         amount: f64, validator_threshold: i64) -> Result<()> {
 
         let content: &mut Account<Content> = &mut ctx.accounts.content;
@@ -18,17 +18,22 @@ pub mod gopulse {
             return Err(ErrorCode::ContentRequired.into())   
         }
 
+        if content_link.chars().count() > 420 {
+            return Err(ErrorCode::ContentTooLarge.into())   
+        }
+
         if validator_threshold % 2 == 0 {
             return Err(ErrorCode::ThresholdEven.into())
         }
 
-        if validator_threshold < 7 {
+        if validator_threshold < 3 {
             return Err(ErrorCode::ThresholdTooSmall.into())
         }
 
         content.poster = *poster.key;
         content.timestamp = clock.unix_timestamp;
         content.content_link = content_link;
+        content.topic = topic;
         content.amount = amount;
         content.validator_threshold = validator_threshold;
         content.total_pool = 0.0;
@@ -169,7 +174,7 @@ pub struct PostContent<'info> {
 
 #[derive(Accounts)]
 pub struct ValidateContent<'info> {
-    #[account(init, payer = validator, space = Validate::LEN, seeds = [b"validate", validator.key().as_ref()], bump)]
+    #[account(init, payer = validator, space = Validate::LEN, seeds = [content.key().as_ref(), validator.key().as_ref()], bump)]
     pub validate: Account<'info, Validate>,
     #[account(mut)]
     pub validator: Signer<'info>, 
@@ -215,6 +220,7 @@ pub struct Content {
     pub poster: Pubkey,
     pub timestamp: i64,
     pub content_link: String,
+    pub topic: String,
     pub amount: f64,
     pub total_pool: f64,
     pub short_pool: f64,
@@ -245,7 +251,7 @@ const PUBLIC_KEY_LENGTH: usize = 32;
 const TIMESTAMP_LENGTH: usize = 8;
 const STRING_LENGTH_PREFIX: usize = 4; // Stores the size of the string.
 const MAX_TOPIC_LENGTH: usize = 50 * 4; // 50 chars max.
-const MAX_CONTENT_LENGTH: usize = 280 * 4; // 280 chars max.
+const MAX_CONTENT_LENGTH: usize = 420 * 4; // 280 chars max.
 const REVIEW_LENGTH: usize = 32;
 
 impl Content {
@@ -271,6 +277,8 @@ impl Validate {
 pub enum ErrorCode {
     #[msg("Content link Required")]
     ContentRequired,
+    #[msg("Content is too large")]
+    ContentTooLarge,
     #[msg("Validator Threshold must be odd")]
     ThresholdEven,
     #[msg("Validator Threshold must be 51 or greater")]

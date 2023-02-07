@@ -14,7 +14,9 @@ describe("gopulse", () => {
   let validatorKeypair = null;
   let validatorKeypair1 = null;
   let contentAccount = null;
-  let contentLink = "content-link";
+  let contentLink = "content link";
+  let topic = "topic";
+
 
   it("Initialize test state", async () => {
     posterKeypair = await anchor.web3.Keypair.generate();
@@ -44,7 +46,7 @@ describe("gopulse", () => {
         program.programId
       )
     
-    await program.rpc.postV0(contentLink, new anchor.BN(2000000000), new anchor.BN(9), {
+    await program.rpc.postV0(contentLink, topic, new anchor.BN(2000000000), new anchor.BN(9), {
         accounts: {
             content: contentPDA,
             poster: posterKeypair.publicKey,
@@ -66,13 +68,14 @@ describe("gopulse", () => {
 
     // Ensure it has the right data.
     assert.equal(contentAccount.poster.toBase58(), posterKeypair.publicKey.toBase58());
-    assert.equal(contentAccount.contentLink, 'content-link');
+    assert.equal(contentAccount.contentLink, 'content link');
     assert.ok(contentAccount.timestamp);
     
     console.log("Content Poster: " + contentAccount.poster);
     console.log("Content Timestamp: " + contentAccount.timestamp);
     console.log("Content Link: " + contentAccount.contentLink);
     console.log("Content Amount: " + contentAccount.amount);
+    console.log("Content Topic: " + contentAccount.topic);
     console.log("Content Validator Count: " + contentAccount.validatorCount);
     console.log("Content Validator Threshold: " + contentAccount.validatorThreshold);
 
@@ -100,7 +103,7 @@ describe("gopulse", () => {
 
         const [validatePDA] = await PublicKey.findProgramAddress(
             [
-            anchor.utils.bytes.utf8.encode('validate'),
+            contentPDA.toBuffer(),
             validatorKeypair1.publicKey.toBuffer(),
             ],
             program.programId
@@ -168,13 +171,13 @@ describe("gopulse", () => {
     
         const [validatePDA] = await PublicKey.findProgramAddress(
             [
-              anchor.utils.bytes.utf8.encode('validate'),
+              contentPDA.toBuffer(),
               validatorKeypair.publicKey.toBuffer(),
             ],
             program.programId
           )
         
-          const [vaultPDA] = await PublicKey.findProgramAddress(
+        const [vaultPDA] = await PublicKey.findProgramAddress(
             [
               anchor.utils.bytes.utf8.encode('vault'),
               contentPDA.toBuffer(),
@@ -241,31 +244,31 @@ describe("gopulse", () => {
         program.programId
       )
 
-        const getPosterBalance = await program.provider.connection.getBalance(posterKeypair.publicKey);
-        const getVaultBalance2 = await program.provider.connection.getBalance(vaultPDA)
+    const getPosterBalance = await program.provider.connection.getBalance(posterKeypair.publicKey);
+    const getVaultBalance2 = await program.provider.connection.getBalance(vaultPDA)
 
-        console.log("Poster Pre Balance: " + getPosterBalance);
-        console.log("Vault Pre Balance: " + getVaultBalance2);
+    console.log("Poster Pre Balance: " + getPosterBalance);
+    console.log("Vault Pre Balance: " + getVaultBalance2);
 
-        await program.rpc.posterCollectV0({
-            accounts: {
-                poster: posterKeypair.publicKey,
-                vault: vaultPDA,
-                content: theKey,
-                systemProgram: anchor.web3.SystemProgram.programId,
-            },
-            signers: [posterKeypair],
-        });
+    await program.rpc.posterCollectV0({
+        accounts: {
+            poster: posterKeypair.publicKey,
+            vault: vaultPDA,
+            content: theKey,
+            systemProgram: anchor.web3.SystemProgram.programId,
+        },
+        signers: [posterKeypair],
+    });
 
-        const getPosterBalance1 = await program.provider.connection.getBalance(posterKeypair.publicKey);
-        const getVaultBalance3 = await program.provider.connection.getBalance(vaultPDA)
+    const getPosterBalance1 = await program.provider.connection.getBalance(posterKeypair.publicKey);
+    const getVaultBalance3 = await program.provider.connection.getBalance(vaultPDA)
 
-        console.log("Poster Post Balance: " + getPosterBalance1);
-        console.log("Vault Post Balance: " + getVaultBalance3);
+    console.log("Poster Post Balance: " + getPosterBalance1);
+    console.log("Vault Post Balance: " + getVaultBalance3);
 
-        let contentAccount1 = await program.account.content.fetch(contentPDA);
-        console.log("Content Dispersed: " + contentAccount1.dispersed);
-        console.log("Content Disbursement: " + contentAccount1.dispersement);
+    let contentAccount1 = await program.account.content.fetch(contentPDA);
+    console.log("Content Dispersed: " + contentAccount1.dispersed);
+    console.log("Content Disbursement: " + contentAccount1.dispersement);
 
   });
 
@@ -292,61 +295,61 @@ describe("gopulse", () => {
 
     const [validatePDA] = await PublicKey.findProgramAddress(
         [
-          anchor.utils.bytes.utf8.encode('validate'),
+          contentPDA.toBuffer(),
           validatorKeypair1.publicKey.toBuffer(),
         ],
         program.programId
       )
 
-      const getValidatorBalance = await program.provider.connection.getBalance(validatorKeypair1.publicKey);
-        const getVaultBalance = await program.provider.connection.getBalance(vaultPDA);
+    const getValidatorBalance = await program.provider.connection.getBalance(validatorKeypair1.publicKey);
+    const getVaultBalance = await program.provider.connection.getBalance(vaultPDA);
 
-        let contentAccount1 = await program.account.content.fetch(contentPDA);
-        console.log("Content Validator Count: " + contentAccount1.validatorCount);
-        console.log("Content Total Pool: " + contentAccount1.totalPool);
-        console.log("Content Long Pool: " + contentAccount1.longPool);
-        console.log("Content Short Pool: " + contentAccount1.shortPool);
-        console.log("Content Long Win: " + contentAccount1.longWin);
-        console.log("Content Short Win: " + contentAccount1.shortWin);
-        console.log("Content Validator Reached: " + contentAccount1.validatorThresholdReached);
+    let contentAccount1 = await program.account.content.fetch(contentPDA);
+    console.log("Content Validator Count: " + contentAccount1.validatorCount);
+    console.log("Content Total Pool: " + contentAccount1.totalPool);
+    console.log("Content Long Pool: " + contentAccount1.longPool);
+    console.log("Content Short Pool: " + contentAccount1.shortPool);
+    console.log("Content Long Win: " + contentAccount1.longWin);
+    console.log("Content Short Win: " + contentAccount1.shortWin);
+    console.log("Content Validator Reached: " + contentAccount1.validatorThresholdReached);
 
-        const validateAccount = await program.account.validate.fetch(validatePDA);
-        console.log("Validate Content Key: " + validateAccount.content);
-        console.log("Validate Amount: " + validateAccount.amount);
-        console.log("Validate Author: " + validateAccount.validator);
-        console.log("Validate Count: " + validateAccount.count);
-        console.log("Validate Position: " + validateAccount.position);
-        console.log("Validate Timestamp: " + validateAccount.timestamp);
+    const validateAccount = await program.account.validate.fetch(validatePDA);
+    console.log("Validate Content Key: " + validateAccount.content);
+    console.log("Validate Amount: " + validateAccount.amount);
+    console.log("Validate Author: " + validateAccount.validator);
+    console.log("Validate Count: " + validateAccount.count);
+    console.log("Validate Position: " + validateAccount.position);
+    console.log("Validate Timestamp: " + validateAccount.timestamp);
 
-        console.log("Validator Pre Balance: " + getValidatorBalance);
-        console.log("Vault Pre Balance: " + getVaultBalance);
+    console.log("Validator Pre Balance: " + getValidatorBalance);
+    console.log("Vault Pre Balance: " + getVaultBalance);
 
-        await program.rpc.validatorCollectV0({
-            accounts: {
-                validate: validatePDA,
-                validator: validatorKeypair1.publicKey,
-                vault: vaultPDA,
-                content: theKey,
-                systemProgram: anchor.web3.SystemProgram.programId,
-            },
-            signers: [validatorKeypair1],
-        });
-    
-        const getValidatorBalance1 = await program.provider.connection.getBalance(validatorKeypair1.publicKey);
-        const getVaultBalance1 = await program.provider.connection.getBalance(vaultPDA)
+    await program.rpc.validatorCollectV0({
+        accounts: {
+            validate: validatePDA,
+            validator: validatorKeypair1.publicKey,
+            vault: vaultPDA,
+            content: theKey,
+            systemProgram: anchor.web3.SystemProgram.programId,
+        },
+        signers: [validatorKeypair1],
+    });
 
-        console.log("Validator Post Balance: " + getValidatorBalance1);
-        console.log("Vault Post Balance: " + getVaultBalance1);
+    const getValidatorBalance1 = await program.provider.connection.getBalance(validatorKeypair1.publicKey);
+    const getVaultBalance1 = await program.provider.connection.getBalance(vaultPDA)
 
-        const validateAccount1 = await program.account.validate.fetch(validatePDA);
-        console.log("Validate Content Key: " + validateAccount1.content);
-        console.log("Validate Amount: " + validateAccount1.amount);
-        console.log("Validate Disbursed: " + validateAccount1.dispersed);
-        console.log("Validate Disbursment: " + validateAccount1.dispersement);
-        console.log("Validate Author: " + validateAccount1.validator);
-        console.log("Validate Count: " + validateAccount1.count);
-        console.log("Validate Position: " + validateAccount1.position);
-        console.log("Validate Timestamp: " + validateAccount1.timestamp);
+    console.log("Validator Post Balance: " + getValidatorBalance1);
+    console.log("Vault Post Balance: " + getVaultBalance1);
+
+    const validateAccount1 = await program.account.validate.fetch(validatePDA);
+    console.log("Validate Content Key: " + validateAccount1.content);
+    console.log("Validate Amount: " + validateAccount1.amount);
+    console.log("Validate Disbursed: " + validateAccount1.dispersed);
+    console.log("Validate Disbursment: " + validateAccount1.dispersement);
+    console.log("Validate Author: " + validateAccount1.validator);
+    console.log("Validate Count: " + validateAccount1.count);
+    console.log("Validate Position: " + validateAccount1.position);
+    console.log("Validate Timestamp: " + validateAccount1.timestamp);
   });
 
 });
