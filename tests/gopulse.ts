@@ -29,14 +29,18 @@ describe("gopulse", () => {
   });
 
   it('Post Content', async () => {
+
+    let postCounter = 32;
     
     const [contentPDA] = await PublicKey.findProgramAddress(
         [
-          anchor.utils.bytes.utf8.encode(contentLink),
+          new anchor.BN(postCounter).toArrayLike(Buffer, "le", 8),
           posterKeypair.publicKey.toBuffer(),
         ],
         program.programId
       )
+
+      console.log(contentPDA.toString())
 
     const [vaultPDA] = await PublicKey.findProgramAddress(
         [
@@ -46,7 +50,7 @@ describe("gopulse", () => {
         program.programId
       )
     
-    await program.rpc.postV0(contentLink, topic, new anchor.BN(2000000000), new anchor.BN(9), {
+    await program.rpc.postV0(contentLink, topic, new anchor.BN(2000000000), new anchor.BN(9), new anchor.BN(postCounter), {
         accounts: {
             content: contentPDA,
             poster: posterKeypair.publicKey,
@@ -76,6 +80,7 @@ describe("gopulse", () => {
     console.log("Content Link: " + contentAccount.contentLink);
     console.log("Content Amount: " + contentAccount.amount);
     console.log("Content Topic: " + contentAccount.topic);
+    console.log("Content Counter: " + contentAccount.postCounter);
     console.log("Content Validator Count: " + contentAccount.validatorCount);
     console.log("Content Validator Threshold: " + contentAccount.validatorThreshold);
 
@@ -84,7 +89,11 @@ describe("gopulse", () => {
   it('Validate Content', async () => {
     
     contentAccount = await program.account.content.all();
-    let theKey = contentAccount[0].publicKey;
+    const theKey = contentAccount[0].publicKey;
+    const contentpc = await program.account.content.fetch(theKey);
+
+    const postCounter = contentpc.postCounter.toString();
+    console.log("postCounter: " + postCounter);
 
       for (let index = 0; index < 5; index++) {
 
@@ -95,7 +104,7 @@ describe("gopulse", () => {
 
         const [contentPDA] = await PublicKey.findProgramAddress(
             [
-              anchor.utils.bytes.utf8.encode(contentLink),
+            new anchor.BN(postCounter).toArrayLike(Buffer, "le", 8),
               posterKeypair.publicKey.toBuffer(),
             ],
             program.programId
@@ -163,7 +172,7 @@ describe("gopulse", () => {
 
         const [contentPDA] = await PublicKey.findProgramAddress(
             [
-              anchor.utils.bytes.utf8.encode(contentLink),
+              new anchor.BN(postCounter).toArrayLike(Buffer, "le", 8),
               posterKeypair.publicKey.toBuffer(),
             ],
             program.programId
@@ -227,10 +236,14 @@ describe("gopulse", () => {
     
     contentAccount = await program.account.content.all();
     let theKey = contentAccount[0].publicKey;
+    const contentpc = await program.account.content.fetch(theKey);
+
+    const postCounter = contentpc.postCounter.toString();
+    console.log("postCounter: " + postCounter);
 
     const [contentPDA] = await PublicKey.findProgramAddress(
         [
-          anchor.utils.bytes.utf8.encode(contentLink),
+          new anchor.BN(postCounter).toArrayLike(Buffer, "le", 8),
           posterKeypair.publicKey.toBuffer(),
         ],
         program.programId
@@ -276,10 +289,14 @@ describe("gopulse", () => {
     
     contentAccount = await program.account.content.all();
     let theKey = contentAccount[0].publicKey;
+    const contentpc = await program.account.content.fetch(theKey);
+
+    const postCounter = contentpc.postCounter.toString();
+    console.log("postCounter: " + postCounter);
 
     const [contentPDA] = await PublicKey.findProgramAddress(
         [
-          anchor.utils.bytes.utf8.encode(contentLink),
+          new anchor.BN(postCounter).toArrayLike(Buffer, "le", 8),
           posterKeypair.publicKey.toBuffer(),
         ],
         program.programId

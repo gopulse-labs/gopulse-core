@@ -8,7 +8,7 @@ pub mod gopulse {
     use super::*;
 
     pub fn post_v0(ctx: Context<PostContent>, content_link: String, topic: String, 
-        amount: f64, validator_threshold: i64) -> Result<()> {
+        amount: f64, validator_threshold: i64, post_counter: i64) -> Result<()> {
 
         let content: &mut Account<Content> = &mut ctx.accounts.content;
         let poster: &Signer = &ctx.accounts.poster;
@@ -32,10 +32,11 @@ pub mod gopulse {
 
         content.poster = *poster.key;
         content.timestamp = clock.unix_timestamp;
-        content.content_link = content_link;
         content.topic = topic;
+        content.content_link = content_link;
         content.amount = amount;
         content.validator_threshold = validator_threshold;
+        content.post_counter = post_counter;
         content.total_pool = 0.0;
         content.long_pool = 0.0;
         content.short_pool = 0.0;
@@ -160,9 +161,9 @@ pub mod gopulse {
 }
 
 #[derive(Accounts)]
-#[instruction(content_link: String)]
+#[instruction(_content_link: String, _topic: String, _amount: f64, _validator_threshold: i64, post_counter: i64)]
 pub struct PostContent<'info> {
-    #[account(init, payer = poster, space = Content::LEN, seeds = [content_link.as_bytes().as_ref(), poster.key().as_ref()], bump)]
+    #[account(init, payer = poster, space = Content::LEN, seeds = [&post_counter.to_le_bytes(), poster.key().as_ref()], bump)]
     pub content: Account<'info, Content>,
     #[account(mut)]
     pub poster: Signer<'info>,
@@ -173,7 +174,7 @@ pub struct PostContent<'info> {
 }
 
 #[derive(Accounts)]
-pub struct ValidateContent<'info> {
+pub struct ValidateContent<'info> { 
     #[account(init, payer = validator, space = Validate::LEN, seeds = [content.key().as_ref(), validator.key().as_ref()], bump)]
     pub validate: Account<'info, Validate>,
     #[account(mut)]
@@ -219,8 +220,8 @@ pub struct PosterCollect<'info> {
 pub struct Content {
     pub poster: Pubkey,
     pub timestamp: i64,
-    pub content_link: String,
     pub topic: String,
+    pub content_link: String,
     pub amount: f64,
     pub total_pool: f64,
     pub short_pool: f64,
@@ -228,6 +229,7 @@ pub struct Content {
     pub short_win: bool,
     pub long_win: bool,
     pub validator_threshold: i64,
+    pub post_counter: i64,
     pub validator_count: i64,
     pub validator_threshold_reached: bool,
     pub dispersement: f64,
@@ -259,14 +261,14 @@ impl Content {
         + PUBLIC_KEY_LENGTH // Author.
         + TIMESTAMP_LENGTH // Timestamp.
         + STRING_LENGTH_PREFIX + MAX_TOPIC_LENGTH // Topic.
-        + STRING_LENGTH_PREFIX + MAX_CONTENT_LENGTH
-        + REVIEW_LENGTH; // Content.
+        + STRING_LENGTH_PREFIX + MAX_CONTENT_LENGTH // Content.
+        + REVIEW_LENGTH;
 }
 
 impl Validate {
     const LEN: usize = DISCRIMINATOR_LENGTH
-        + PUBLIC_KEY_LENGTH // TweetKey.
-        + PUBLIC_KEY_LENGTH // TweetKey.
+        + PUBLIC_KEY_LENGTH // ValidatorKey.
+        + PUBLIC_KEY_LENGTH // ContentKey.
         + TIMESTAMP_LENGTH // Timestamp.
         + PUBLIC_KEY_LENGTH // Verifier.
         + STRING_LENGTH_PREFIX + MAX_CONTENT_LENGTH;
@@ -279,11 +281,11 @@ pub enum ErrorCode {
     ContentRequired,
     #[msg("Content is too large")]
     ContentTooLarge,
-    #[msg("Validator Threshold must be odd")]
+    #[msg("Market size must be odd")]
     ThresholdEven,
-    #[msg("Validator Threshold must be 51 or greater")]
+    #[msg("Market size must be 3 or greater")]
     ThresholdTooSmall,
-    #[msg("Validator Threshold has been reached")]
+    #[msg("Market size has been reached")]
     ThresholdReached,
     #[msg("No Dispersement Available")]
     NoDispersement,
