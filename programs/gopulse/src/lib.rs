@@ -158,6 +158,17 @@ pub mod gopulse {
         Ok(())
     }
 
+    pub fn signup_user_v0(ctx: Context<SignupUser>, name: String, avatar: String) -> Result<()> {
+        let user_account = &mut ctx.accounts.user_account;
+        let authority = &mut ctx.accounts.authority;
+
+        user_account.name = name;
+        user_account.avatar = avatar;
+        user_account.authority = authority.key();
+
+        Ok(())
+    }
+
 }
 
 #[derive(Accounts)]
@@ -216,6 +227,15 @@ pub struct PosterCollect<'info> {
     pub system_program: Program<'info, System>,
 }
 
+#[derive(Accounts)]
+pub struct SignupUser<'info> {
+    #[account(init, payer = authority, space = 8 + 40 + 120  + 32)]
+    pub user_account: Account<'info, UserState>,
+    #[account(mut)]
+    pub authority: Signer<'info>,
+    pub system_program: Program<'info, System>,
+}
+
 #[account]
 pub struct Content {
     pub poster: Pubkey,
@@ -246,6 +266,13 @@ pub struct Validate {
     pub dispersed: bool,
     pub count: i64,
     pub position: String,
+}
+
+#[account]
+pub struct UserState {
+    pub name: String,
+    pub avatar: String,
+    pub authority: Pubkey,
 }
 
 const DISCRIMINATOR_LENGTH: usize = 8;

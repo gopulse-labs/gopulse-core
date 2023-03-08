@@ -17,7 +17,6 @@ describe("gopulse", () => {
   let contentLink = "content link";
   let topic = "topic";
 
-
   it("Initialize test state", async () => {
     posterKeypair = await anchor.web3.Keypair.generate();
     const signature2 = await program.provider.connection.requestAirdrop(posterKeypair.publicKey, 100000000000);
@@ -367,6 +366,27 @@ describe("gopulse", () => {
     console.log("Validate Count: " + validateAccount1.count);
     console.log("Validate Position: " + validateAccount1.position);
     console.log("Validate Timestamp: " + validateAccount1.timestamp);
+  });
+
+  it("Create new user", async () => {
+    const userAccount = anchor.web3.Keypair.generate();
+
+  const name = "user name";
+  const avatar = "https://img.link";
+
+  await program.rpc.signupUserV0(name, avatar, {
+    accounts: {
+      authority: posterKeypair.publicKey,
+      userAccount: userAccount.publicKey,
+      systemProgram: anchor.web3.SystemProgram.programId,
+    },
+    signers: [userAccount, posterKeypair],
+  });
+
+  const user = await program.account.userState.fetch(userAccount.publicKey);
+  console.log("User Account: " + user.authority)
+  console.log("User Name: " + user.name)
+  console.log("User Avatar: " + user.avatar)
   });
 
 });
