@@ -169,6 +169,15 @@ pub mod gopulse {
         Ok(())
     }
 
+    pub fn update_user_v0(ctx: Context<UpdateUser>, name: String, avatar: String) -> Result<()> {
+        let user_account = &mut ctx.accounts.user_account;
+  
+        user_account.name = name;
+        user_account.avatar = avatar;
+  
+        Ok(())
+    }
+
 }
 
 #[derive(Accounts)]
@@ -229,12 +238,22 @@ pub struct PosterCollect<'info> {
 
 #[derive(Accounts)]
 pub struct SignupUser<'info> {
-    #[account(init, payer = authority, space = 8 + 40 + 120  + 32)]
+    #[account(init, payer = authority, space = 8 + 40 + 120  + 32, seeds = [b"profile", authority.key().as_ref()], bump)]
     pub user_account: Account<'info, UserState>,
     #[account(mut)]
     pub authority: Signer<'info>,
     pub system_program: Program<'info, System>,
 }
+
+#[derive(Accounts)]
+  pub struct UpdateUser<'info> {
+      #[account(
+          mut,
+          has_one = authority,
+      )]
+      pub user_account: Account<'info, UserState>,
+      pub authority: Signer<'info>,
+  }
 
 #[account]
 pub struct Content {

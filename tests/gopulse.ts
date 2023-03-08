@@ -369,24 +369,59 @@ describe("gopulse", () => {
   });
 
   it("Create new user", async () => {
-    const userAccount = anchor.web3.Keypair.generate();
 
-  const name = "user name";
-  const avatar = "https://img.link";
+    const [profilePDA] = await PublicKey.findProgramAddress(
+        [
+          anchor.utils.bytes.utf8.encode('profile'),
+          posterKeypair.publicKey.toBuffer(),
+        ],
+        program.programId
+      )
 
-  await program.rpc.signupUserV0(name, avatar, {
-    accounts: {
-      authority: posterKeypair.publicKey,
-      userAccount: userAccount.publicKey,
-      systemProgram: anchor.web3.SystemProgram.programId,
-    },
-    signers: [userAccount, posterKeypair],
+    const name = "user name";
+    const avatar = "https://img.link";
+
+    await program.rpc.signupUserV0(name, avatar, {
+            accounts: {
+                authority: posterKeypair.publicKey,
+                userAccount: profilePDA,
+                systemProgram: anchor.web3.SystemProgram.programId,
+            },
+            signers: [posterKeypair],
+    });
+
+    const user = await program.account.userState.fetch(profilePDA);
+    console.log("User Account: " + user.authority)
+    console.log("User Name: " + user.name)
+    console.log("User Avatar: " + user.avatar)
   });
 
-  const user = await program.account.userState.fetch(userAccount.publicKey);
-  console.log("User Account: " + user.authority)
-  console.log("User Name: " + user.name)
-  console.log("User Avatar: " + user.avatar)
+  it("Update user", async () => {
+
+    const [profilePDA] = await PublicKey.findProgramAddress(
+        [
+          anchor.utils.bytes.utf8.encode('profile'),
+          posterKeypair.publicKey.toBuffer(),
+        ],
+        program.programId
+      )
+
+    const name = "user name 1";
+    const avatar = "https://img.link1";
+
+    await program.rpc.updateUserV0(name, avatar, {
+            accounts: {
+                authority: posterKeypair.publicKey,
+                userAccount: profilePDA,
+                systemProgram: anchor.web3.SystemProgram.programId,
+            },
+            signers: [posterKeypair],
+    });
+
+    const user = await program.account.userState.fetch(profilePDA);
+    console.log("User Account: " + user.authority)
+    console.log("User Name: " + user.name)
+    console.log("User Avatar: " + user.avatar)
   });
 
 });
