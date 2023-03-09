@@ -37,8 +37,8 @@ pub mod gopulse {
         content.amount = amount;
         content.validator_threshold = validator_threshold;
         content.post_counter = post_counter;
-        content.total_pool = 0.0;
-        content.long_pool = 0.0;
+        content.total_pool = amount;
+        content.long_pool = amount;
         content.short_pool = 0.0;
         content.validator_count = 0;
         content.validator_threshold_reached = false;
@@ -116,7 +116,8 @@ pub mod gopulse {
 
         if content.long_win == true {
             let percentage = content.amount / content.long_pool;
-            let dispersement = content.short_pool * percentage;
+            let final_share = content.short_pool * percentage;
+            let dispersement = content.amount + final_share;
 
             content.dispersed = true;
             content.dispersement = dispersement;
@@ -135,7 +136,8 @@ pub mod gopulse {
 
         if content.long_win == true && validate.position == "long" {
             let percentage = validate.amount / content.long_pool;
-            let dispersement = content.short_pool * percentage;
+            let final_share = content.short_pool * percentage;
+            let dispersement = validate.amount + final_share;
     
             validate.dispersement = dispersement;
             validate.dispersed = true;
@@ -146,7 +148,8 @@ pub mod gopulse {
 
         if content.short_win == true && validate.position == "short" {
             let percentage = validate.amount / content.short_pool;
-            let dispersement = content.long_pool * percentage;
+            let final_share = content.long_pool * percentage;
+            let dispersement = validate.amount + final_share;
     
             validate.dispersement = dispersement;
             validate.dispersed = true;
