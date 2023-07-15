@@ -181,6 +181,15 @@ pub mod gopulse {
         Ok(())
     }
 
+    pub fn subscribe_v0(ctx: Context<Subscribe>) -> Result<()> {
+        let subscribe_account = &mut ctx.accounts.subscribe_account;
+        let subscriber: &Signer = &ctx.accounts.subscriber;
+
+        subscribe_account.subscriber = *subscriber.key;
+ 
+        Ok(())
+    }
+
 }
 
 #[derive(Accounts)]
@@ -257,6 +266,18 @@ pub struct SignupUser<'info> {
       pub user_account: Account<'info, UserState>,
       pub authority: Signer<'info>,
   }
+  
+  #[derive(Accounts)]
+pub struct Subscribe<'info> {
+    #[account(init, payer = subscriber, space = 8 + 40 + 120  + 32, seeds = [subscriber.key().as_ref(), subscribed.key().as_ref()], bump)]
+    pub subscribe_account: Account<'info, SubscribeState>,
+    #[account(mut)]
+    pub subscriber: Signer<'info>,
+    #[account(mut)]
+    /// CHECK: This is not dangerous because we just pay to this account
+    pub subscribed: AccountInfo<'info>,
+    pub system_program: Program<'info, System>,
+}
 
 #[account]
 pub struct Content {
@@ -295,6 +316,12 @@ pub struct UserState {
     pub name: String,
     pub avatar: String,
     pub authority: Pubkey,
+}
+
+#[account]
+pub struct SubscribeState {
+    pub subscriber: Pubkey,
+    pub subscribed: Pubkey,
 }
 
 const DISCRIMINATOR_LENGTH: usize = 8;

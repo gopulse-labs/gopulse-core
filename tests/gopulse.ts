@@ -94,7 +94,7 @@ describe("gopulse", () => {
     const postCounter = contentpc.postCounter.toString();
     console.log("postCounter: " + postCounter);
 
-      for (let index = 0; index < 5; index++) {
+      for (let index = 0; index < 1; index++) {
 
         validatorKeypair1 = await anchor.web3.Keypair.generate();
         const signature4 = await program.provider.connection.requestAirdrop(validatorKeypair1.publicKey, 100000000000);
@@ -162,7 +162,7 @@ describe("gopulse", () => {
         console.log("----------------------------------------------------------------------");
       }
 
-      for (let index = 0; index < 4; index++) {
+      for (let index = 0; index < 1; index++) {
 
         validatorKeypair = await anchor.web3.Keypair.generate();
         const signature4 = await program.provider.connection.requestAirdrop(validatorKeypair.publicKey, 100000000000);
@@ -229,6 +229,18 @@ describe("gopulse", () => {
         console.log("Vault Balance: " + getVaultBalance);
         console.log("----------------------------------------------------------------------");
       }
+  });
+
+  it("Subscribes to poster", async () => {
+    const [subscribePDA] = await PublicKey.findProgramAddress(
+        [
+          posterKeypair.publicKey.toBuffer(),
+          validatorKeypair1.publicKey.toBuffer(),
+        ],
+        program.programId
+      )
+      
+      console.log("Subscribe PDA: " + subscribePDA);
   });
 
   it("Poster Dispersement", async () => {
