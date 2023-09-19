@@ -431,9 +431,36 @@ describe("gopulse", () => {
     });
 
     const user = await program.account.userState.fetch(profilePDA);
-    console.log("User Account: " + user.authority)
+    console.log("User Account: " + user.authority) 
     console.log("User Name: " + user.name)
     console.log("User Avatar: " + user.avatar)
+  });
+
+  it("Subscribe", async () => {
+
+    validatorKeypair = await anchor.web3.Keypair.generate();
+
+    const [subscribePDA] = await PublicKey.findProgramAddress(
+        [
+          posterKeypair.publicKey.toBuffer(),
+          validatorKeypair.publicKey.toBuffer(),
+        ],
+        program.programId
+      )
+
+    await program.rpc.subscribeV0({
+            accounts: {
+                subscribeAccount: subscribePDA,
+                subscriber: posterKeypair.publicKey,
+                subscribed: validatorKeypair.publicKey,
+                systemProgram: anchor.web3.SystemProgram.programId,
+            },
+            signers: [posterKeypair],
+    });
+
+   const subscribe = await program.account.subscribeState.fetch(subscribePDA);
+   console.log("Subscriber: " + subscribe.subscriber);
+   console.log("Subscribed: " + subscribe.subscribed);
   });
 
 });

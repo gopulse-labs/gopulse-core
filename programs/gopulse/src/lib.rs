@@ -186,6 +186,7 @@ pub mod gopulse {
         let subscriber: &Signer = &ctx.accounts.subscriber;
 
         subscribe_account.subscriber = *subscriber.key;
+        subscribe_account.subscribed = ctx.accounts.subscribed.key();
  
         Ok(())
     }
@@ -269,7 +270,7 @@ pub struct SignupUser<'info> {
   
   #[derive(Accounts)]
 pub struct Subscribe<'info> {
-    #[account(init, payer = subscriber, space = 8 + 40 + 120  + 32, seeds = [subscriber.key().as_ref(), subscribed.key().as_ref()], bump)]
+    #[account(init, payer = subscriber, space = 8 + 40 + 120 + 32, seeds = [subscriber.key().as_ref(), subscribed.key().as_ref()], bump)]
     pub subscribe_account: Account<'info, SubscribeState>,
     #[account(mut)]
     pub subscriber: Signer<'info>,

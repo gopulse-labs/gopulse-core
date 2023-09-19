@@ -1,6 +1,6 @@
 ## Project Overview
 
-The GoPulse Protocol(GPP) enables users to create content posts, validators to validate those posts, and participants to earn rewards based on the outcome of the validation process. It implements a novel PvP AMM mechanism for managing funds and distributing rewards among the participants.
+The GoPulse Protocol(GPP) enables users to create content posts, "validators" to validate those posts, and participants to earn rewards based on the outcome of the validation process. It implements a novel PvP AMM mechanism for managing funds and distributing rewards among the participants.
 
 ### What is GoPulse?
 
@@ -16,7 +16,7 @@ Third, GoPulse leverages the speed and scalability of the Solana blockchain. Tra
 
 By combining the benefits of Web2 convenience, Web3 decentralization, and the efficiency of Solana blockchain, GoPulse revolutionizes the way content is created, validated, and rewarded. We envision a future where users actively engage in a trustworthy and rewarding ecosystem, unlocking a new level of content quality and authenticity.
 
-### Game Theory
+### Incentive Structure
 
 GoPulse can be considered as a combination of both cooperative and non-cooperative game elements, depending on the specific interactions and perspectives we consider.
 
